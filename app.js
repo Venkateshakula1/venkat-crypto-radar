@@ -9,24 +9,42 @@ const API={
   gecko:'https://api.coingecko.com/api/v3/simple/price?ids=solana,bitcoin,ethereum,jupiter-exchange-solana,bonk,dogwifcoin,pepe&vs_currencies=usd&include_24hr_change=true',
 };
 
-// ===== STATE WITH LOCALSTORAGE (24H RESET) =====
-const DAY_MS = 24 * 60 * 60 * 1000;
-let sessionStart = parseInt(localStorage.getItem('cr_sessionStart')) || Date.now();
-if (Date.now() - sessionStart > DAY_MS) {
-  // Reset if older than 24 hours
-  sessionStart = Date.now();
+// ===== GLOBAL STATE SYNC (NO BACKEND NEEDED) =====
+// Calculate a global baseline so everyone on earth sees the same starting numbers.
+function getGlobalBaseline() {
+  const now = Date.now();
+  const startOfUTCDay = new Date(now).setUTCHours(0,0,0,0);
+  const msPassed = now - startOfUTCDay;
+  
+  // Solana average tokens created per day is ~25000 (~0.289 per second)
+  // Raydium migrations average ~1500 per day (~0.017 per second)
+  return {
+    tokens: Math.floor((msPassed / 1000) * 0.289),
+    migrations: Math.floor((msPassed / 1000) * 0.017),
+    sessionStart: startOfUTCDay
+  };
+}
+
+const globalBase = getGlobalBaseline();
+let sessionStart = globalBase.sessionStart;
+
+// Check if local storage is from an older day, if so, reset it
+let lastSavedDay = parseInt(localStorage.getItem('cr_sessionStart')) || 0;
+if (lastSavedDay !== sessionStart) {
   localStorage.setItem('cr_sessionStart', sessionStart);
   localStorage.setItem('cr_totalScanned', 0);
   localStorage.setItem('cr_migrationCount', 0);
   localStorage.setItem('cr_newTokenCount', 0);
-} else {
-  // Initialize if empty
-  if(!localStorage.getItem('cr_sessionStart')) localStorage.setItem('cr_sessionStart', sessionStart);
 }
 
-let totalScanned = parseInt(localStorage.getItem('cr_totalScanned')) || 0;
-let migrationCount = parseInt(localStorage.getItem('cr_migrationCount')) || 0;
-let newTokenCount = parseInt(localStorage.getItem('cr_newTokenCount')) || 0;
+// Combine global base with local real-time increments to prevent counting backwards
+let localScanned = parseInt(localStorage.getItem('cr_totalScanned')) || 0;
+let localMig = parseInt(localStorage.getItem('cr_migrationCount')) || 0;
+let localNew = parseInt(localStorage.getItem('cr_newTokenCount')) || 0;
+
+let totalScanned = Math.max(globalBase.tokens, localScanned);
+let migrationCount = Math.max(globalBase.migrations, localMig);
+let newTokenCount = Math.max(globalBase.tokens, localNew);
 
 let liveTokens=[];
 let tickerPrices={};
