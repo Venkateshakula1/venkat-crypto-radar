@@ -316,21 +316,32 @@ function mapPairToToken(p){
   const vol=p.volume?.h1||0;
   const buys=p.txns?.h1?.buys||0;
   const liq=p.liquidity?.usd||0;
+  const mcap=p.fdv||p.marketCap||0;
   const age=p.pairCreatedAt?((Date.now()-p.pairCreatedAt)/60000):9999;
-  // Score: newer + more volume + more buys + good liquidity = higher
-  let score=30;
-  if(age<5)score+=30; else if(age<30)score+=20; else if(age<60)score+=10;
-  if(vol>10000)score+=15; else if(vol>1000)score+=10; else if(vol>100)score+=5;
-  if(buys>50)score+=15; else if(buys>20)score+=10; else if(buys>5)score+=5;
-  if(liq>5000)score+=10; else if(liq>1000)score+=5;
+  
+  let score=40; // Base score
+  // Age bonus: don't heavily penalize older runners
+  if(age<15)score+=15; else if(age<120)score+=10; else if(age<1440)score+=5;
+
+  // Volume & Txn Bonus: Massively rewards highly active tokens
+  if(vol>500000)score+=25; else if(vol>100000)score+=15; else if(vol>20000)score+=10; else if(vol>5000)score+=5;
+  if(buys>300)score+=15; else if(buys>100)score+=10; else if(buys>30)score+=5;
+
+  // Liquidity Bonus
+  if(liq>50000)score+=10; else if(liq>10000)score+=5;
+
+  // Mega Runner Override (Huge volume + liq instantly boosts to high conviction)
+  if (vol > 1000000 && liq > 100000) score += 15;
+
   score=Math.min(99,Math.max(10,score));
+  
   return{
     name:p.baseToken?.symbol||'???',
     fullName:p.baseToken?.name||'',
     address:p.baseToken?.address||'',
     pair:p.pairAddress||'',
     dex:p.dexId||'',
-    mcap:p.fdv||p.marketCap||0,
+    mcap:mcap,
     price:p.priceUsd||'0',
     priceChange:p.priceChange?.m5||p.priceChange?.h1||0,
     volume:vol,
@@ -340,23 +351,35 @@ function mapPairToToken(p){
     url:p.url||'',
     imageUrl:p.info?.imageUrl||'',
     score,
-    isNew:age<10, // less than 10 minutes old
+    isNew:age<15,
   };
 }
 
-// Fetch brand new token profiles + get their pair data
 // DEPRECATED: Free DexScreener profiles API is rate-limited.
 // We now rely on real-time PumpPortal wsTokens instead!
 
-// Also search for very recent pump tokens
+// Search for top trending volume tokens
 async function fetchRecentPumpTokens(){
-  const data=await fetchJSON(API.dexSearch+'pump');
-  if(!data||!data.pairs)return[];
-  const now=Date.now();
-  return data.pairs
-    .filter(p=>p.chainId==='solana'&&p.pairCreatedAt&&(now-p.pairCreatedAt)<3600000) // last 1 hour
-    .sort((a,b)=>(b.pairCreatedAt||0)-(a.pairCreatedAt||0))
-    .slice(0,20)
+  const [pumpData, solData] = await Promise.all([
+    fetchJSON(API.dexSearch+'pump'),
+    fetchJSON(API.dexSearch+'solana')
+  ]);
+  const pairs = [...(pumpData?.pairs||[]), ...(solData?.pairs||[])];
+  
+  // Deduplicate pairs
+  const uniquePairs = [];
+  const seen = new Set();
+  for (const p of pairs) {
+    if (p.chainId==='solana' && !seen.has(p.pairAddress)) {
+      seen.add(p.pairAddress);
+      uniquePairs.push(p);
+    }
+  }
+
+  // Sort by H1 Volume instead of just age, to catch huge runners!
+  return uniquePairs
+    .sort((a,b)=>(b.volume?.h1||0) - (a.volume?.h1||0))
+    .slice(0, 30)
     .map(mapPairToToken);
 }
 
