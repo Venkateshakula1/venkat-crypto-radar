@@ -431,6 +431,29 @@ function getAge(ts){
 refreshFeed();
 setInterval(refreshFeed,15000); // Refresh every 15 seconds for live data
 
+// ===== TELEGRAM ALERTS =====
+async function sendTelegramAlert(message) {
+  const token = localStorage.getItem('tg_bot_token');
+  const chatId = localStorage.getItem('tg_chat_id');
+  if (!token || !chatId) return; // Silent return if not configured
+
+  try {
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+      })
+    });
+  } catch (e) {
+    console.error('Failed to send Telegram alert:', e);
+  }
+}
+
 // ===== TOAST ALERTS for MIGRATIONS =====
 function showToast(token){
   const c=document.getElementById('alert-toast-container');
@@ -446,6 +469,9 @@ function showToast(token){
     <div class="toast-body"><span class="toast-coin">${token.name}</span> · Score: <span class="toast-score">${token.score}/100</span> · MCap: ${fmtUsd(token.mcap)}<br><a href="https://axiom.trade/t/${token.address}" target="_blank" style="color:#00ffa3;font-weight:700;text-decoration:none">⚡ Trade on Axiom</a></div>`;
   c.appendChild(t);
   setTimeout(()=>{if(t.parentNode){t.classList.add('removing');setTimeout(()=>t.remove(),300)}},6000);
+
+  // Trigger Telegram Alert
+  sendTelegramAlert(`🚨 <b>Raydium Migration</b>\n\n<b>Token:</b> ${token.name}\n<b>Score:</b> ${token.score}/100\n<b>MCap:</b> ${fmtUsd(token.mcap)}\n<b>CA:</b> <code>${token.address}</code>\n\n⚡ <a href="https://axiom.trade/t/${token.address}">Trade on Axiom</a>`);
 }
 
 // ===== SIGNALS PAGE - Real data with FILTERS =====
@@ -754,4 +780,63 @@ setInterval(updateRealtimeStats,3000);
 const s=document.createElement('style');
 s.textContent='.positive{color:var(--green)}.negative{color:var(--red)}';
 document.head.appendChild(s);
+
+// ===== SETTINGS MODAL LOGIC =====
+const modal = document.getElementById('settings-modal');
+const btnSettings = document.getElementById('nav-settings');
+const btnClose = document.getElementById('btn-close-settings');
+const tgTokenInput = document.getElementById('tg-bot-token');
+const tgChatIdInput = document.getElementById('tg-chat-id');
+
+// Load saved data
+tgTokenInput.value = localStorage.getItem('tg_bot_token') || '';
+tgChatIdInput.value = localStorage.getItem('tg_chat_id') || '';
+
+btnSettings?.addEventListener('click', (e) => {
+  e.preventDefault();
+  modal.classList.add('active');
+});
+
+btnClose?.addEventListener('click', () => {
+  modal.classList.remove('active');
+});
+
+document.getElementById('btn-save-settings')?.addEventListener('click', () => {
+  localStorage.setItem('tg_bot_token', tgTokenInput.value.trim());
+  localStorage.setItem('tg_chat_id', tgChatIdInput.value.trim());
+  addAlert('✅', 'Settings Saved', 'Telegram API credentials saved securely in browser.');
+  modal.classList.remove('active');
+});
+
+document.getElementById('btn-test-tg')?.addEventListener('click', async () => {
+  const t = tgTokenInput.value.trim();
+  const c = tgChatIdInput.value.trim();
+  if (!t || !c) {
+    alert("Please enter both Bot Token and Chat ID first!");
+    return;
+  }
+  
+  const btn = document.getElementById('btn-test-tg');
+  btn.textContent = 'Sending...';
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${t}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: c,
+        text: "✅ <b>Meme Radar Connection Test</b>\n\nYour dashboard is successfully connected to Telegram! You will now receive alerts for Raydium migrations.",
+        parse_mode: 'HTML'
+      })
+    });
+    if (res.ok) {
+      alert("Test message sent! Check your Telegram.");
+    } else {
+      const err = await res.json();
+      alert("Failed to send: " + err.description);
+    }
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+  btn.textContent = 'Test Alert';
+});
 console.log('🚀 CryptoRadar Live - All real data, zero fakes');
