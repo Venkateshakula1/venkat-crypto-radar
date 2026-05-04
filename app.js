@@ -555,9 +555,9 @@ function initChart(){
     equityData.push(0);
   }
   const gradient=ctx.createLinearGradient(0,0,0,220);
-  gradient.addColorStop(0,'rgba(0,255,163,0.3)');gradient.addColorStop(1,'rgba(0,255,163,0)');
-  equityChart=new Chart(ctx,{type:'line',data:{labels:equityLabels,datasets:[{data:equityData,fill:true,backgroundColor:gradient,borderColor:'#00ffa3',borderWidth:2,pointBackgroundColor:'#00ffa3',pointBorderColor:'#0a0e17',pointBorderWidth:2,pointRadius:4,tension:.4}]},
-    options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(30,41,59,0.5)'},ticks:{color:'#64748b'}},y:{grid:{color:'rgba(30,41,59,0.5)'},ticks:{color:'#64748b'}}}}});
+  gradient.addColorStop(0,'rgba(16,185,129,0.3)');gradient.addColorStop(1,'rgba(16,185,129,0)');
+  equityChart=new Chart(ctx,{type:'line',data:{labels:equityLabels,datasets:[{data:equityData,fill:true,backgroundColor:gradient,borderColor:'#10b981',borderWidth:2,pointBackgroundColor:'#10b981',pointBorderColor:'#ffffff',pointBorderWidth:2,pointRadius:4,tension:.4}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{color:'#64748b'}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{color:'#64748b'}}}}});
 }
 initChart();
 
