@@ -866,9 +866,38 @@ let runnersData = [];
 let activeRunnerRange = 'all';
 
 async function refreshRunners() {
-  const tokens = await fetchTrendingTokens();
-  runnersData = tokens.filter(t => t.mcap >= 300000);
-  renderRunners();
+  const tbody = document.getElementById('runners-tbody');
+  if (tbody && runnersData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3)">🔍 Searching for active runners...</td></tr>';
+  }
+
+  try {
+    // Fetch specifically for high volume/trending solana tokens
+    const [trending, search] = await Promise.all([
+      fetchJSON('https://api.dexscreener.com/latest/dex/search?q=solana'),
+      fetchJSON('https://api.dexscreener.com/latest/dex/search?q=top')
+    ]);
+
+    const allPairs = [...(trending?.pairs || []), ...(search?.pairs || [])];
+    const seen = new Set();
+    const tokens = allPairs
+      .filter(p => {
+        if (p.chainId !== 'solana' || seen.has(p.baseToken.address)) return false;
+        seen.add(p.baseToken.address);
+        return true;
+      })
+      .map(mapPairToToken);
+
+    // Filter for Runners (>300k MCap)
+    runnersData = tokens.filter(t => t.mcap >= 300000);
+    
+    // Sort by Volume or Price Change to show the hottest ones first
+    runnersData.sort((a, b) => b.volume - a.volume);
+    
+    renderRunners();
+  } catch (err) {
+    console.error("Runners fetch error:", err);
+  }
 }
 
 function renderRunners() {
