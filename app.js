@@ -689,9 +689,14 @@ setInterval(async()=>{
 // ===== REFRESH BUTTON =====
 document.getElementById('btn-refresh').addEventListener('click',async()=>{
   const btn=document.getElementById('btn-refresh');
-  btn.style.transform='rotate(360deg)';btn.style.transition='transform 0.5s';
-  setTimeout(()=>{btn.style.transform='';btn.style.transition=''},500);
-  await Promise.all([updateTicker(),refreshFeed(),updateSentiment()]);
+  if(btn){
+    btn.style.transform='rotate(360deg)';
+    btn.style.transition='transform 0.5s';
+    setTimeout(()=>{btn.style.transform='';btn.style.transition=''},500);
+  }
+  try {
+    await Promise.all([updateDashboardStats(), updateTrendingMetas(), refreshFeed(), updateSentiment()]);
+  } catch(e) { console.error("Refresh failed:", e); }
 });
 
 // ===== REAL-TIME STATS UPDATE LOOP =====
