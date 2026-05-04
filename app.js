@@ -460,6 +460,9 @@ function showToast(token){
   const dateStr = d.toLocaleString('en-US', { day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true }) + ' IST';
   const tgMsg = `<b>Meme Radar - Migrations</b> 🚀\n🪙 COIN: ${token.name}\n🎯 SCORE: ${token.score}/100\n🔥 CONVICTION: RAYDIUM\n💰 MARKETCAP: ${fmtUsd(token.mcap)}\n📋 CA: <code>${token.address}</code>\n\n🔗 GMGN:\nhttps://gmgn.ai/sol/token/${token.address}\n🧭 AXIOM:\nhttps://axiom.trade/t/${token.address}\n📊 DEX:\nhttps://dexscreener.com/solana/${token.address}\n\n🕒 DETECTED: ${dateStr}\n@MemeRadarBot`;
   sendTelegramAlert(tgMsg);
+
+  // Save to persistent High Conviction List
+  saveHighConviction(token);
 }
 
 // ===== SIGNALS PAGE - Real data with FILTERS =====
@@ -711,8 +714,54 @@ setInterval(async()=>{
     const tgMsg = `<b>Meme Radar - Calls</b> 📈\n🪙 COIN: ${hot.name}\n🎯 SCORE: ${hot.score}/100\n🔥 CONVICTION: HIGH\n💰 MARKETCAP: ${fmtUsd(hot.mcap)}\n📋 CA: <code>${hot.address}</code>\n\n🔗 GMGN:\nhttps://gmgn.ai/sol/token/${hot.address}\n🧭 AXIOM:\nhttps://axiom.trade/t/${hot.address}\n📊 DEX:\nhttps://dexscreener.com/solana/${hot.address}\n\n🕒 DETECTED: ${dateStr}\n@MemeRadarBot`;
     
     sendTelegramAlert(tgMsg);
+    saveHighConviction(hot);
   }
 },45000);
+
+// ===== HIGH CONVICTION MASTERLIST (PERSISTENT) =====
+let highConvictionList = JSON.parse(localStorage.getItem('cr_high_conviction')) || [];
+
+function saveHighConviction(token) {
+  if (highConvictionList.find(t => t.address === token.address)) return;
+  highConvictionList.unshift({
+    time: new Date().toLocaleString('en-US', { day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true }),
+    name: token.name,
+    score: token.score,
+    mcap: token.mcap,
+    address: token.address,
+    type: token.isMigration ? 'RAYDIUM' : 'HIGH'
+  });
+  localStorage.setItem('cr_high_conviction', JSON.stringify(highConvictionList));
+  renderHighConviction();
+}
+
+function renderHighConviction() {
+  const tbody = document.getElementById('conviction-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = highConvictionList.map(t => {
+    const typeClass = t.type === 'RAYDIUM' ? 'moon' : 'running';
+    return `<tr>
+      <td style="font-family:var(--mono);font-size:.8rem;color:var(--text2)">${t.time}</td>
+      <td><strong>${t.name}</strong> <span class="outcome-badge ${typeClass}">${t.type}</span></td>
+      <td style="color:var(--green);font-weight:bold">${t.score}/100</td>
+      <td>${fmtUsd(t.mcap)}</td>
+      <td style="font-family:var(--mono);font-size:.7rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;cursor:pointer" title="${t.address}" onclick="navigator.clipboard.writeText('${t.address}')">${t.address.slice(0,8)}...${t.address.slice(-6)}</td>
+      <td>
+        <a href="https://axiom.trade/t/${t.address}" target="_blank" class="feed-link feed-link-axiom">⚡ AXIOM</a> 
+        <a href="https://dexscreener.com/solana/${t.address}" target="_blank" class="feed-link">DEX</a>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('btn-clear-conviction')?.addEventListener('click', () => {
+  if(confirm("Are you sure you want to erase all high conviction data? This cannot be undone.")) {
+    highConvictionList = [];
+    localStorage.removeItem('cr_high_conviction');
+    renderHighConviction();
+  }
+});
+renderHighConviction();
 
 // ===== THEME TOGGLE =====
 const savedTheme = localStorage.getItem('cr_theme') || 'light';
