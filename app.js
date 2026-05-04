@@ -861,6 +861,57 @@ document.getElementById('stat-watching')?.addEventListener('click', () => {
 });
 document.getElementById('stat-watching').style.cursor = 'pointer';
 
+// ===== TODAY RUNNERS PAGE =====
+let runnersData = [];
+let activeRunnerRange = 'all';
+
+async function refreshRunners() {
+  const tokens = await fetchTrendingTokens();
+  runnersData = tokens.filter(t => t.mcap >= 300000);
+  renderRunners();
+}
+
+function renderRunners() {
+  const tbody = document.getElementById('runners-tbody');
+  if (!tbody) return;
+
+  let filtered = runnersData;
+  if (activeRunnerRange === 'mid') filtered = runnersData.filter(t => t.mcap >= 300000 && t.mcap < 1000000);
+  else if (activeRunnerRange === 'high') filtered = runnersData.filter(t => t.mcap >= 1000000 && t.mcap < 5000000);
+  else if (activeRunnerRange === 'mega') filtered = runnersData.filter(t => t.mcap >= 5000000);
+
+  tbody.innerHTML = filtered.map(t => {
+    const sc = t.score >= 85 ? 'score-high' : t.score >= 65 ? 'score-med' : 'score-low';
+    return `<tr>
+      <td><strong>${t.name}</strong> <span style="font-size:0.7rem;color:var(--text2)">${t.fullName.slice(0,10)}</span></td>
+      <td style="font-weight:700;color:var(--cyan)">${fmtUsd(t.mcap)}</td>
+      <td style="color:${t.priceChange>=0?'var(--green)':'var(--red)'}">${t.priceChange>=0?'+':''}${t.priceChange.toFixed(1)}%</td>
+      <td>${fmtUsd(t.volume)}</td>
+      <td>${fmtUsd(t.liquidity)}</td>
+      <td><span class="score-badge ${sc}">${t.score}</span></td>
+      <td>
+        <div style="display:flex;gap:4px;">
+          <a href="https://axiom.trade/t/${t.address}" target="_blank" class="feed-link feed-link-axiom">⚡ AXIOM</a>
+          <a href="https://gmgn.ai/sol/token/${t.address}" target="_blank" class="feed-link">GMGN</a>
+          <a href="https://dexscreener.com/solana/${t.address}" target="_blank" class="feed-link">DEX</a>
+        </div>
+      </td>
+    </tr>`}).join('') || '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3)">No runners found in this market cap range.</td></tr>';
+}
+
+// Runner filter click handlers
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('runner-filter')) {
+    document.querySelectorAll('.runner-filter').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    activeRunnerRange = e.target.dataset.range;
+    renderRunners();
+  }
+});
+
+refreshRunners();
+setInterval(refreshRunners, 30000);
+
 // ===== THEME TOGGLE =====
 const savedTheme = localStorage.getItem('cr_theme') || 'light';
 if (savedTheme === 'dark') document.documentElement.classList.add('dark-theme');
