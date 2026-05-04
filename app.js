@@ -888,8 +888,15 @@ async function refreshRunners() {
       })
       .map(mapPairToToken);
 
-    // Filter for Runners (>300k MCap)
-    runnersData = tokens.filter(t => t.mcap >= 300000);
+    const now = Date.now();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+
+    // Filter for Runners (>300k MCap AND Created Today)
+    runnersData = tokens.filter(t => {
+      const isRunner = t.mcap >= 300000;
+      const isToday = t.created && (now - t.created) <= oneDayMs;
+      return isRunner && isToday;
+    });
     
     // Sort by Volume or Price Change to show the hottest ones first
     runnersData.sort((a, b) => b.volume - a.volume);
