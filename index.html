@@ -485,6 +485,39 @@
                 </table>
             </div>
         </div>
+
+        <!-- Settings Modal (Telegram Bot Setup) -->
+        <div id="settings-modal" class="modal-overlay">
+            <div class="modal-content card">
+                <div class="modal-header">
+                    <h2>⚙️ Dashboard Settings</h2>
+                    <button class="modal-close" id="btn-close-settings">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-section">
+                        <h3>📱 Telegram Alerts</h3>
+                        <p class="settings-desc">Get instant push notifications to your phone for high-conviction tokens and migrations.</p>
+                        
+                        <div class="input-group">
+                            <label>Bot Token</label>
+                            <input type="password" id="tg-bot-token" placeholder="e.g. 123456789:ABCdefGHIjklMNOpqrSTUvwxYZ">
+                            <span class="input-hint">Create a bot with <a href="https://t.me/BotFather" target="_blank" class="text-cyan">@BotFather</a> to get a token.</span>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>Chat ID</label>
+                            <input type="text" id="tg-chat-id" placeholder="e.g. 987654321">
+                            <span class="input-hint">Send a message to your bot and use <a href="https://t.me/getmyid_bot" target="_blank" class="text-cyan">@getmyid_bot</a> to find your ID.</span>
+                        </div>
+                        
+                        <div class="settings-actions">
+                            <button id="btn-test-tg" class="btn-scan" style="background:var(--bg3);color:var(--text);border:1px solid var(--border)">Test Alert</button>
+                            <button id="btn-save-settings" class="btn-scan">Save Settings</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script src="app.js"></script>
