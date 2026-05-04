@@ -471,7 +471,10 @@ function showToast(token){
   setTimeout(()=>{if(t.parentNode){t.classList.add('removing');setTimeout(()=>t.remove(),300)}},6000);
 
   // Trigger Telegram Alert
-  sendTelegramAlert(`🚨 <b>Raydium Migration</b>\n\n<b>Token:</b> ${token.name}\n<b>Score:</b> ${token.score}/100\n<b>MCap:</b> ${fmtUsd(token.mcap)}\n<b>CA:</b> <code>${token.address}</code>\n\n⚡ <a href="https://axiom.trade/t/${token.address}">Trade on Axiom</a>`);
+  const d = new Date();
+  const dateStr = d.toLocaleString('en-US', { day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true }) + ' IST';
+  const tgMsg = `<b>Meme Radar - Migrations</b> 🚀\n🪙 COIN: ${token.name}\n🎯 SCORE: ${token.score}/100\n🔥 CONVICTION: RAYDIUM\n💰 MARKETCAP: ${fmtUsd(token.mcap)}\n📋 CA: <code>${token.address}</code>\n\n🔗 GMGN:\nhttps://gmgn.ai/sol/token/${token.address}\n🧭 AXIOM:\nhttps://axiom.trade/t/${token.address}\n📊 DEX:\nhttps://dexscreener.com/solana/${token.address}\n\n🕒 DETECTED: ${dateStr}\n@MemeRadarBot`;
+  sendTelegramAlert(tgMsg);
 }
 
 // ===== SIGNALS PAGE - Real data with FILTERS =====
@@ -713,7 +716,13 @@ setInterval(async()=>{
   if(hot && !alertedTokens.has(hot.address)){
     alertedTokens.add(hot.address);
     addAlert('🚨',`${hot.name} scored ${hot.score}/100`,`MCap: ${fmtUsd(hot.mcap)} · Vol: ${fmtUsd(hot.volume)} · ${hot.priceChange>=0?'+':''}${hot.priceChange}% 1H`);
-    sendTelegramAlert(`🔥 <b>HIGH CONVICTION ALERT</b>\n\n<b>Token:</b> ${hot.name}\n<b>Score:</b> ${hot.score}/100\n<b>MCap:</b> ${fmtUsd(hot.mcap)}\n<b>CA:</b> <code>${hot.address}</code>\n\n⚡ <a href="https://axiom.trade/t/${hot.address}">Trade on Axiom</a>`);
+    
+    const d = new Date();
+    const dateStr = d.toLocaleString('en-US', { day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true }) + ' IST';
+    
+    const tgMsg = `<b>Meme Radar - Calls</b> 📈\n🪙 COIN: ${hot.name}\n🎯 SCORE: ${hot.score}/100\n🔥 CONVICTION: HIGH\n💰 MARKETCAP: ${fmtUsd(hot.mcap)}\n📋 CA: <code>${hot.address}</code>\n\n🔗 GMGN:\nhttps://gmgn.ai/sol/token/${hot.address}\n🧭 AXIOM:\nhttps://axiom.trade/t/${hot.address}\n📊 DEX:\nhttps://dexscreener.com/solana/${hot.address}\n\n🕒 DETECTED: ${dateStr}\n@MemeRadarBot`;
+    
+    sendTelegramAlert(tgMsg);
   }
 },45000);
 
