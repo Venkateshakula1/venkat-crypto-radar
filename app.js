@@ -706,10 +706,15 @@ addAlert('🚀','Dashboard Started','CryptoRadar is now tracking live tokens fro
 addAlert('📡','APIs Connected','CoinGecko & DexScreener data streams active');
 
 // Auto-alerts from scanning
+const alertedTokens = new Set();
 setInterval(async()=>{
   const tokens=await fetchTrendingTokens();
   const hot=tokens.find(t=>t.score>=90);
-  if(hot){addAlert('🚨',`${hot.name} scored ${hot.score}/100`,`MCap: ${fmtUsd(hot.mcap)} · Vol: ${fmtUsd(hot.volume)} · ${hot.priceChange>=0?'+':''}${hot.priceChange}% 1H`)}
+  if(hot && !alertedTokens.has(hot.address)){
+    alertedTokens.add(hot.address);
+    addAlert('🚨',`${hot.name} scored ${hot.score}/100`,`MCap: ${fmtUsd(hot.mcap)} · Vol: ${fmtUsd(hot.volume)} · ${hot.priceChange>=0?'+':''}${hot.priceChange}% 1H`);
+    sendTelegramAlert(`🔥 <b>HIGH CONVICTION ALERT</b>\n\n<b>Token:</b> ${hot.name}\n<b>Score:</b> ${hot.score}/100\n<b>MCap:</b> ${fmtUsd(hot.mcap)}\n<b>CA:</b> <code>${hot.address}</code>\n\n⚡ <a href="https://axiom.trade/t/${hot.address}">Trade on Axiom</a>`);
+  }
 },45000);
 
 // ===== THEME TOGGLE =====
