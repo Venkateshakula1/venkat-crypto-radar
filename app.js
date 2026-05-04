@@ -540,8 +540,8 @@ function renderFilteredSignals(){
 
 async function refreshSignals(){
   const tokens=await fetchTrendingTokens();
-  // Merge WS tokens + API tokens
-  const allTokens=[...wsTokens,...tokens];
+  // Merge WS tokens + API tokens and filter out low score tokens (<65)
+  const allTokens=[...wsTokens,...tokens].filter(t => t.score >= 65);
   const seen=new Set();
   signalsData=allTokens.filter(t=>{if(seen.has(t.address))return false;seen.add(t.address);return true;}).sort((a,b)=>b.created-a.created);
   renderFilteredSignals();
